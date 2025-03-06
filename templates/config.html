@@ -71,6 +71,14 @@
             border-top: 1px solid #ddd;
             padding-top: 20px;
         }
+        textarea.form-control {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -135,6 +143,19 @@
         </div>
         <button type="button" id="test-visualize-relationships">Visualize Relationships</button>
         <div id="visualize-relationships-result" class="result-area"></div>
+        
+        <h3>Run Database Query</h3>
+        <div class="form-group">
+            <label for="query_database_id">Database ID:</label>
+            <input type="text" id="query_database_id" placeholder="Enter database ID">
+        </div>
+        <div class="form-group">
+            <label for="sql_query">SQL Query:</label>
+            <textarea id="sql_query" placeholder="Enter SQL query" rows="4" class="form-control"></textarea>
+            <small class="form-text text-muted">Query will be limited to returning 5 rows for safety.</small>
+        </div>
+        <button type="button" id="test-run-query">Run Query</button>
+        <div id="run-query-result" class="result-area"></div>
     </div>
     
     <div class="section">
@@ -155,10 +176,8 @@
             <label for="exec_action_id">Action ID:</label>
             <input type="text" id="exec_action_id" placeholder="Enter action ID">
         </div>
-        <div id="action-parameters">
-            <!-- Parameters will be added dynamically -->
-        </div>
         <button type="button" id="load-action-params">Load Parameters</button>
+        <div id="action-parameters" class="form-group"></div>
         <button type="button" id="test-execute-action">Execute Action</button>
         <div id="execute-action-result" class="result-area"></div>
     </div>
@@ -450,6 +469,40 @@
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: `database_id=${databaseId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.innerHTML = `<div class="error">${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+        });
+
+        // Test run query
+        document.getElementById('test-run-query').addEventListener('click', function() {
+            const databaseId = document.getElementById('query_database_id').value;
+            const sqlQuery = document.getElementById('sql_query').value;
+            
+            if (!databaseId || !sqlQuery) {
+                alert('Please enter both database ID and SQL query');
+                return;
+            }
+            
+            const resultArea = document.getElementById('run-query-result');
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Executing query...';
+            
+            fetch('/test_run_query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `database_id=${encodeURIComponent(databaseId)}&query=${encodeURIComponent(sqlQuery)}`
             })
             .then(response => response.json())
             .then(data => {

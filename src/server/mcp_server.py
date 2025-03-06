@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 from src.config.settings import Config
-from src.tools.metabase_tools import list_databases, get_database_metadata, visualize_database_relationships
+from src.tools.metabase_tools import list_databases, get_database_metadata, visualize_database_relationships, run_database_query
 from src.tools.metabase_action_tools import list_actions, get_action_details, execute_action
 
 def create_mcp_server():
@@ -82,6 +82,28 @@ def create_mcp_server():
             "required": ["database_id"]
         }
     )(visualize_database_relationships)
+    
+    mcp.tool(
+        description="Run a read-only SQL query against a database and return the first 5 rows",
+        examples=[
+            "Run query 'SELECT * FROM users' on database 1", 
+            "Execute 'SELECT id, name FROM products WHERE price > 100' on database 2"
+        ],
+        input_schema={
+            "type": "object",
+            "properties": {
+                "database_id": {
+                    "type": "integer",
+                    "description": "The ID of the database to query"
+                },
+                "query": {
+                    "type": "string",
+                    "description": "The SQL query to execute (will be limited to 5 rows)"
+                }
+            },
+            "required": ["database_id", "query"]
+        }
+    )(run_database_query)
     
     return mcp
 

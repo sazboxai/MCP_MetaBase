@@ -183,6 +183,26 @@ def create_app():
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
     
+    @app.route('/test_run_query', methods=['POST'])
+    async def test_run_query():
+        """Test the run_database_query tool"""
+        from src.tools.metabase_tools import run_database_query
+        
+        database_id = request.form.get('database_id')
+        query = request.form.get('query')
+        
+        if not database_id or not database_id.isdigit():
+            return jsonify({'success': False, 'error': 'Valid database ID is required'})
+        
+        if not query or not query.strip():
+            return jsonify({'success': False, 'error': 'SQL query is required'})
+        
+        try:
+            result = await run_database_query(int(database_id), query)
+            return jsonify({'success': True, 'result': result})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+    
     return app
 
 def run_web_interface():

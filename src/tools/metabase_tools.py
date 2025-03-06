@@ -240,4 +240,64 @@ async def visualize_database_relationships(database_id: int) -> str:
         if has_relationships:
             result += "\n"
     
+    return result
+
+async def run_database_query(database_id: int, query: str) -> str:
+    """
+    Run a read-only SQL query against a database and return the first 5 rows.
+    
+    Args:
+        database_id: The ID of the database to query
+        query: The SQL query to execute (will be limited to 5 rows)
+        
+    Returns:
+        A formatted string with the query results or error message
+    """
+    # Execute the query with a limit of 5 rows
+    response = await MetabaseAPI.run_query(database_id, query, row_limit=5)
+    
+    if response is None:
+        return "Error: No response received from Metabase API"
+    
+    if isinstance(response, dict) and "error" in response:
+        return f"Error executing query: {response.get('message', 'Unknown error')}"
+    
+    # Format the results
+    result = f"## Query Results\n\n"
+    result += f"```sql\n{query}\n```\n\n"
+    
+    # Extract and format the data
+    try:
+        # Get column names
+        if "data" in response and "cols" in response["data"]:
+            columns = [col.get("name", f"Column {i}") for i, col in enumerate(response["data"]["cols"])]
+            
+            # Get rows (limited to 5)
+            rows = []
+            if "data" in response and "rows" in response["data"]:
+                rows = response["data"]["rows"][:5]
+            
+            # Format as a table
+            if columns and rows:
+                # Add header
+                result += "| " + " | ".join(columns) + " |\n"
+                result += "| " + " | ".join(["---"] * len(columns)) + " |\n"
+                
+                # Add rows
+                for row in rows:
+                    result += "| " + " | ".join([str(cell) for cell in row]) + " |\n"
+                
+                # Add row count info
+                total_row_count = response.get("row_count", len(rows))
+                if total_row_count > 5:
+                    result += f"\n*Showing 5 of {total_row_count} rows*\n"
+            else:
+                result += "No data returned by the query.\n"
+        else:
+            result += "No data structure found in the response.\n"
+            result += f"Raw response: {response}\n"
+    except Exception as e:
+        result += f"Error formatting results: {str(e)}\n"
+        result += f"Raw response: {response}\n"
+    
     return result 

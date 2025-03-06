@@ -175,4 +175,49 @@ class MetabaseAPI:
         
         # Replace tables with enhanced versions
         metadata['tables'] = enhanced_tables
-        return metadata 
+        return metadata
+    
+    @classmethod
+    async def run_query(cls, database_id: int, query_string: str, row_limit: int = 5):
+        """Run a native query against a database with a row limit
+        
+        Args:
+            database_id: The ID of the database to query
+            query_string: The SQL query to execute
+            row_limit: Maximum number of rows to return (default: 5)
+            
+        Returns:
+            Query results or error message
+        """
+        # Ensure the query has a LIMIT clause for safety
+        query_string = cls._ensure_query_limit(query_string, row_limit)
+        
+        # Prepare the query payload
+        payload = {
+            "database": database_id,
+            "type": "native",
+            "native": {
+                "query": query_string,
+                "template-tags": {}
+            }
+        }
+        
+        # Execute the query
+        return await cls.post_request("dataset", payload)
+    
+    @staticmethod
+    def _ensure_query_limit(query: str, limit: int) -> str:
+        """Ensure the query has a LIMIT clause
+        
+        This is a simple implementation and may not work for all SQL dialects
+        or complex queries. It's a basic safety measure.
+        """
+        # Convert to uppercase for case-insensitive matching
+        query_upper = query.upper()
+        
+        # Check if query already has a LIMIT clause
+        if "LIMIT" in query_upper:
+            return query
+        
+        # Add LIMIT clause
+        return f"{query} LIMIT {limit}" 
