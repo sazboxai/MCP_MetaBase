@@ -2,7 +2,7 @@
 
 A Model Control Protocol (MCP) server that enables AI assistants to interact with Metabase databases and actions.
 
-![Metabase MCP Server](https://path-to-screenshot.png)
+![Metabase MCP Server]
 
 ## Overview
 
@@ -14,7 +14,7 @@ The Metabase MCP Server provides a bridge between AI assistants and Metabase, al
 - List and execute Metabase actions
 - Perform operations on Metabase data through a secure API
 
-This server implements the [Model Control Protocol (MCP)](https://github.com/anthropics/mcp) specification, making it compatible with AI assistants that support MCP tools.
+This server implements the [Model Control Protocol (MCP)] specification, making it compatible with AI assistants that support MCP tools.
 
 ## Features
 
