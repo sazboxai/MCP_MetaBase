@@ -127,6 +127,14 @@
         </div>
         <button type="button" id="test-get-metadata">Test Get Metadata</button>
         <div id="get-metadata-result" class="result-area"></div>
+        
+        <h3>Visualize Database Relationships</h3>
+        <div class="form-group">
+            <label for="relationship_database_id">Database ID:</label>
+            <input type="text" id="relationship_database_id" placeholder="Enter database ID">
+        </div>
+        <button type="button" id="test-visualize-relationships">Visualize Relationships</button>
+        <div id="visualize-relationships-result" class="result-area"></div>
     </div>
     
     <div class="section">
@@ -421,6 +429,38 @@
             .catch(error => {
                 resultArea.className = 'result-area error';
                 resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+
+        // Test visualize relationships
+        document.getElementById('test-visualize-relationships').addEventListener('click', function() {
+            const databaseId = document.getElementById('relationship_database_id').value;
+            if (!databaseId) {
+                alert('Please enter a database ID');
+                return;
+            }
+            
+            const resultArea = document.getElementById('visualize-relationships-result');
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Visualizing relationships...';
+            
+            fetch('/test_visualize_relationships', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `database_id=${databaseId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.innerHTML = `<div class="error">${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             });
         });
     </script>

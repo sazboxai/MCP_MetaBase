@@ -168,6 +168,21 @@ def create_app():
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
     
+    @app.route('/test_visualize_relationships', methods=['POST'])
+    async def test_visualize_relationships():
+        """Test the visualize_database_relationships tool"""
+        from src.tools.metabase_tools import visualize_database_relationships
+        
+        database_id = request.form.get('database_id')
+        if not database_id or not database_id.isdigit():
+            return jsonify({'success': False, 'error': 'Valid database ID is required'})
+        
+        try:
+            result = await visualize_database_relationships(int(database_id))
+            return jsonify({'success': True, 'result': result})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+    
     return app
 
 def run_web_interface():

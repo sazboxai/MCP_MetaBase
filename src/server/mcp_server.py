@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 from src.config.settings import Config
-from src.tools.metabase_tools import list_databases, get_database_metadata
+from src.tools.metabase_tools import list_databases, get_database_metadata, visualize_database_relationships
 from src.tools.metabase_action_tools import list_actions, get_action_details, execute_action
 
 def create_mcp_server():
@@ -67,6 +67,21 @@ def create_mcp_server():
             "required": ["action_id"]
         }
     )(execute_action)
+    
+    mcp.tool(
+        description="Visualize relationships between tables in a database",
+        examples=["Show relationships in database 1", "Visualize database schema for database 2"],
+        input_schema={
+            "type": "object",
+            "properties": {
+                "database_id": {
+                    "type": "integer",
+                    "description": "The ID of the database to visualize relationships for"
+                }
+            },
+            "required": ["database_id"]
+        }
+    )(visualize_database_relationships)
     
     return mcp
 

@@ -142,4 +142,37 @@ class MetabaseAPI:
         for key, value in parameters.items():
             sanitized_params[str(key)] = value
         
-        return await cls.post_request(f"action/{action_id}/execute", {"parameters": sanitized_params}) 
+        return await cls.post_request(f"action/{action_id}/execute", {"parameters": sanitized_params})
+    
+    @classmethod
+    async def get_table_metadata(cls, table_id: int):
+        """Get detailed metadata for a specific table including foreign keys"""
+        return await cls.get_request(f"table/{table_id}/query_metadata")
+    
+    @classmethod
+    async def get_database_schema(cls, database_id: int):
+        """Get the database schema with relationships between tables"""
+        # First get the basic metadata
+        metadata = await cls.get_database_metadata(database_id)
+        
+        if metadata is None or "error" in metadata:
+            return metadata
+        
+        # For each table, get detailed metadata including foreign keys
+        tables = metadata.get('tables', [])
+        enhanced_tables = []
+        
+        for table in tables:
+            table_id = table.get('id')
+            if table_id:
+                table_details = await cls.get_table_metadata(table_id)
+                if table_details and not "error" in table_details:
+                    enhanced_tables.append(table_details)
+                else:
+                    enhanced_tables.append(table)
+            else:
+                enhanced_tables.append(table)
+        
+        # Replace tables with enhanced versions
+        metadata['tables'] = enhanced_tables
+        return metadata 
