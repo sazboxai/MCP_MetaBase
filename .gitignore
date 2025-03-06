@@ -1,0 +1,93 @@
+# Environment and configuration
+.env
+.env.*
+!.env.example
+venv/
+env/
+ENV/
+.venv
+.python-version
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Metabase specific
+metabase-data/
+
+# Temporary files
+tmp/
+temp/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Local development
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+```
+
+This `.gitignore` file:
+
+1. Excludes environment files (`.env`) that might contain sensitive API keys
+2. Ignores Python cache files and build artifacts
+3. Excludes virtual environment directories
+4. Ignores IDE-specific files and directories
+5. Excludes logs and testing artifacts
+6. Ignores any Metabase data directories
+7. Excludes temporary files and Jupyter notebooks
+
+You can create this file in the root directory of your project. If you need to make any adjustments based on your specific setup, feel free to modify it.

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Metabase MCP Configuration</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .test-button {
+            background-color: #2196F3;
+        }
+        .test-button:hover {
+            background-color: #0b7dda;
+        }
+        .message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .result-area {
+            margin: 20px 0;
+            padding:.875rem;
+            background: #f5f5f5;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .section {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Metabase MCP Configuration</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="message {% if 'error' in messages[0].lower() %}error{% else %}success{% endif %}">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <form method="post" action="/save_config" id="config-form">
+        <div class="form-group">
+            <label for="metabase_url">Metabase URL:</label>
+            <input type="text" id="metabase_url" name="metabase_url" value="{{ metabase_url }}" placeholder="http://localhost:3000">
+        </div>
+        
+        <div class="form-group">
+            <label for="api_key">API Key:</label>
+            <input type="text" id="api_key" name="api_key" value="{{ api_key }}" placeholder="Enter your Metabase API key">
+        </div>
+        
+        <div class="form-group">
+            <button type="submit">Save Configuration</button>
+            <button type="button" class="test-button" id="test-connection">Test Connection</button>
+        </div>
+    </form>
+    
+    <div id="connection-result" class="result-area"></div>
+    
+    <div class="section">
+        <h2>Test Tools</h2>
+        
+        <h3>List Databases</h3>
+        <button type="button" id="test-list-databases">Test List Databases</button>
+        <div id="list-databases-result" class="result-area"></div>
+        
+        <h3>Get Database Metadata</h3>
+        <div class="form-group">
+            <label for="database_id">Database ID:</label>
+            <input type="text" id="database_id" placeholder="Enter database ID">
+        </div>
+        <button type="button" id="test-get-metadata">Test Get Metadata</button>
+        <div id="get-metadata-result" class="result-area"></div>
+    </div>
+    
+    <div class="section">
+        <h3>List Actions</h3>
+        <button type="button" id="test-list-actions">Test List Actions</button>
+        <div id="list-actions-result" class="result-area"></div>
+        
+        <h3>Get Action Details</h3>
+        <div class="form-group">
+            <label for="action_id">Action ID:</label>
+            <input type="text" id="action_id" placeholder="Enter action ID">
+        </div>
+        <button type="button" id="test-get-action">Test Get Action Details</button>
+        <div id="get-action-result" class="result-area"></div>
+        
+        <h3>Execute Action</h3>
+        <div class="form-group">
+            <label for="exec_action_id">Action ID:</label>
+            <input type="text" id="exec_action_id" placeholder="Enter action ID">
+        </div>
+        <div id="action-parameters">
+            <!-- Parameters will be added dynamically -->
+        </div>
+        <button type="button" id="load-action-params">Load Parameters</button>
+        <button type="button" id="test-execute-action">Execute Action</button>
+        <div id="execute-action-result" class="result-area"></div>
+    </div>
+    
+    <script>
+        // Test connection
+        document.getElementById('test-connection').addEventListener('click', function() {
+            const url = document.getElementById('metabase_url').value;
+            const apiKey = document.getElementById('api_key').value;
+            const resultArea = document.getElementById('connection-result');
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Testing connection...';
+            
+            fetch('/test_connection', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `metabase_url=${encodeURIComponent(url)}&api_key=${encodeURIComponent(apiKey)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                } else {
+                    resultArea.className = 'result-area error';
+                }
+                resultArea.innerHTML = data.message;
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+        
+        // Test list databases
+        document.getElementById('test-list-databases').addEventListener('click', function() {
+            const resultArea = document.getElementById('list-databases-result');
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Fetching databases...';
+            
+            fetch('/test_list_databases')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+        
+        // Test get metadata
+        document.getElementById('test-get-metadata').addEventListener('click', function() {
+            const databaseId = document.getElementById('database_id').value;
+            const resultArea = document.getElementById('get-metadata-result');
+            
+            if (!databaseId) {
+                resultArea.style.display = 'block';
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = 'Please enter a database ID';
+                return;
+            }
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Fetching metadata...';
+            
+            fetch('/test_get_metadata', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `database_id=${encodeURIComponent(databaseId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+
+        // Test list actions
+        document.getElementById('test-list-actions').addEventListener('click', function() {
+            const resultArea = document.getElementById('list-actions-result');
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Fetching actions...';
+            
+            fetch('/test_list_actions')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+
+        // Test get action details
+        document.getElementById('test-get-action').addEventListener('click', function() {
+            const actionId = document.getElementById('action_id').value;
+            const resultArea = document.getElementById('get-action-result');
+            
+            if (!actionId) {
+                resultArea.style.display = 'block';
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = 'Please enter an action ID';
+                return;
+            }
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Fetching action details...';
+            
+            fetch('/test_get_action_details', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `action_id=${encodeURIComponent(actionId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+
+        // Load action parameters
+        document.getElementById('load-action-params').addEventListener('click', function() {
+            const actionId = document.getElementById('exec_action_id').value;
+            const paramsContainer = document.getElementById('action-parameters');
+            
+            if (!actionId) {
+                alert('Please enter an action ID');
+                return;
+            }
+            
+            paramsContainer.innerHTML = 'Loading parameters...';
+            
+            fetch('/test_get_action_details', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `action_id=${encodeURIComponent(actionId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Parse the markdown to extract parameters
+                    const paramSection = data.result.split('### Parameters')[1];
+                    if (!paramSection) {
+                        paramsContainer.innerHTML = 'No parameters found for this action.';
+                        return;
+                    }
+                    
+                    // Clear container
+                    paramsContainer.innerHTML = '';
+                    
+                    // Extract parameter names from the markdown
+                    const paramLines = paramSection.split('\n');
+                    let paramCount = 0;
+                    
+                    for (const line of paramLines) {
+                        if (line.startsWith('- **')) {
+                            const paramName = line.split('**:')[0].replace('- **', '').trim();
+                            
+                            const formGroup = document.createElement('div');
+                            formGroup.className = 'form-group';
+                            
+                            const label = document.createElement('label');
+                            label.setAttribute('for', `param_${paramName}`);
+                            label.textContent = `Parameter: ${paramName}`;
+                            
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.id = `param_${paramName}`;
+                            input.name = `param_${paramName}`;
+                            input.placeholder = `Enter value for ${paramName}`;
+                            
+                            formGroup.appendChild(label);
+                            formGroup.appendChild(input);
+                            paramsContainer.appendChild(formGroup);
+                            
+                            paramCount++;
+                        }
+                    }
+                    
+                    if (paramCount === 0) {
+                        paramsContainer.innerHTML = 'No parameters found for this action.';
+                    }
+                } else {
+                    paramsContainer.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                paramsContainer.innerHTML = `Error: ${error}`;
+            });
+        });
+
+        // Execute action
+        document.getElementById('test-execute-action').addEventListener('click', function() {
+            const actionId = document.getElementById('exec_action_id').value;
+            const resultArea = document.getElementById('execute-action-result');
+            const paramsContainer = document.getElementById('action-parameters');
+            
+            if (!actionId) {
+                resultArea.style.display = 'block';
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = 'Please enter an action ID';
+                return;
+            }
+            
+            // Collect parameters
+            const formData = new FormData();
+            formData.append('action_id', actionId);
+            
+            // Add all input fields from the parameters container
+            const inputs = paramsContainer.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (input.name && input.value) {
+                    formData.append(input.name, input.value);
+                }
+            });
+            
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Executing action...';
+            
+            fetch('/test_execute_action', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultArea.className = 'result-area success';
+                    resultArea.innerHTML = data.result;
+                } else {
+                    resultArea.className = 'result-area error';
+                    resultArea.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                resultArea.className = 'result-area error';
+                resultArea.innerHTML = `Error: ${error}`;
+            });
+        });
+    </script>
+</body>
+</html>

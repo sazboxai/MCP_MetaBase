@@ -1,0 +1,2 @@
+mkdir -p src/api src/config src/server src/tools templates
+touch src/__init__.py src/api/__init__.py src/config/__init__.py src/server/__init__.py src/tools/__init__.py 
