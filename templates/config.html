@@ -92,7 +92,17 @@
         
         <div class="form-group">
             <label for="api_key">API Key:</label>
-            <input type="text" id="api_key" name="api_key" value="{{ api_key }}" placeholder="Enter your Metabase API key">
+            <input type="password" id="api_key" name="api_key" class="form-control" 
+                   value="{{ api_key }}" 
+                   placeholder="{{ 'API key is set' if api_key_set else 'Enter your Metabase API key' }}"
+                   required>
+            <small class="form-text text-muted">
+                {% if api_key_set %}
+                Your API key is stored encrypted. Enter a new key to change it.
+                {% else %}
+                Your API key will be stored encrypted and never displayed in plain text.
+                {% endif %}
+            </small>
         </div>
         
         <div class="form-group">

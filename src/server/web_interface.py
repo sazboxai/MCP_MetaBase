@@ -11,10 +11,15 @@ def create_app():
     @app.route('/')
     def home():
         """Home page with configuration form"""
+        # Don't pass the actual API key to the template
+        # Just indicate if one is set
+        api_key_set = bool(Config._METABASE_API_KEY)
+        
         return render_template(
             'config.html', 
             metabase_url=Config.METABASE_URL,
-            api_key=Config.METABASE_API_KEY
+            api_key="" if not api_key_set else "••••••••••••••••••••••",
+            api_key_set=api_key_set
         )
     
     @app.route('/save_config', methods=['POST'])
@@ -27,30 +32,53 @@ def create_app():
             flash('Metabase URL is required!')
             return redirect(url_for('home'))
         
-        Config.save_metabase_config(metabase_url, api_key)
-        flash('Configuration saved successfully!')
+        # Only update API key if it's changed (not the masked version)
+        if "•" not in api_key:
+            Config.save_metabase_config(metabase_url, api_key)
+            flash('Configuration saved successfully!')
+        else:
+            # Only update URL if API key wasn't changed
+            with open(Config.CONFIG_FILE, 'w') as f:
+                f.write(f"METABASE_URL={metabase_url}\n")
+                f.write(f"METABASE_API_KEY={Config._METABASE_API_KEY}\n")
+                f.write(f"SECRET_KEY={Config.SECRET_KEY}\n")
+            
+            # Update current environment and class attribute
+            os.environ['METABASE_URL'] = metabase_url
+            Config.METABASE_URL = metabase_url
+            flash('URL updated successfully!')
+        
         return redirect(url_for('home'))
     
     @app.route('/test_connection', methods=['POST'])
     async def test_connection():
         """Test connection with current or provided credentials"""
         metabase_url = request.form.get('metabase_url', Config.METABASE_URL).strip()
-        api_key = request.form.get('api_key', Config.METABASE_API_KEY).strip()
+        api_key = request.form.get('api_key', '').strip()
+        
+        # Don't use the masked version
+        if "•" in api_key:
+            api_key = Config.get_metabase_api_key()
         
         # Temporarily update config for testing
         old_url = Config.METABASE_URL
-        old_key = Config.METABASE_API_KEY
+        old_key = Config.get_metabase_api_key()
         Config.METABASE_URL = metabase_url
-        Config.METABASE_API_KEY = api_key
         
-        success, message = await MetabaseAPI.test_connection()
-        
-        # Restore original config if not saving
-        if 'save' not in request.form:
+        try:
+            success, message = await MetabaseAPI.test_connection()
+            
+            # Restore original config if not saving
+            if 'save' not in request.form:
+                Config.METABASE_URL = old_url
+            
+            return jsonify({'success': success, 'message': message})
+        except Exception as e:
+            # Restore original config
             Config.METABASE_URL = old_url
-            Config.METABASE_API_KEY = old_key
-        
-        return jsonify({'success': success, 'message': message})
+            
+            # Return error as JSON
+            return jsonify({'success': False, 'message': f"Error: {str(e)}"})
     
     @app.route('/test_list_databases')
     async def test_list_databases():

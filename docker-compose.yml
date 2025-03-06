@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  metabase-mcp:
+    build: .
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - METABASE_URL=http://host.docker.internal:3000
+      - FLASK_DEBUG=False
+    command: config 

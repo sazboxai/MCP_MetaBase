@@ -6,6 +6,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install cryptography package
+RUN pip install --no-cache-dir cryptography
+
 # Copy application code
 COPY src/ ./src/
 COPY templates/ ./templates/
