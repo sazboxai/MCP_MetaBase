@@ -199,8 +199,16 @@ def create_app():
         
         try:
             result = await run_database_query(int(database_id), query)
+            
+            # Check if the result contains an error message
+            if result and isinstance(result, str) and result.startswith("Error executing query:"):
+                return jsonify({'success': False, 'error': result})
+            
             return jsonify({'success': True, 'result': result})
         except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            print(f"Error in test_run_query: {str(e)}\n{error_traceback}")
             return jsonify({'success': False, 'error': str(e)})
     
     return app

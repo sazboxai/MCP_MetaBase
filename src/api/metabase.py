@@ -189,6 +189,11 @@ class MetabaseAPI:
         Returns:
             Query results or error message
         """
+        # Remove trailing semicolons that can cause issues with Metabase API
+        query_string = query_string.strip()
+        if query_string.endswith(';'):
+            query_string = query_string[:-1]
+        
         # Ensure the query has a LIMIT clause for safety
         query_string = cls._ensure_query_limit(query_string, row_limit)
         
@@ -203,7 +208,24 @@ class MetabaseAPI:
         }
         
         # Execute the query
-        return await cls.post_request("dataset", payload)
+        response = await cls.post_request("dataset", payload)
+        
+        # Improved error handling for Metabase error responses
+        if response and isinstance(response, dict) and "error" in response:
+            error_data = response.get("error")
+            
+            # Check for common error patterns in Metabase responses
+            if isinstance(error_data, str) and "does not exist" in error_data:
+                # This is likely a SQL syntax error from the database
+                return {"error": "SQL Error", "message": error_data}
+            
+            # If the error message contains additional info
+            message = response.get("message", "Unknown error")
+            if isinstance(message, dict) and "data" in message:
+                if "errors" in message["data"]:
+                    return {"error": "SQL Error", "message": message["data"]["errors"]}
+        
+        return response
     
     @staticmethod
     def _ensure_query_limit(query: str, limit: int) -> str:

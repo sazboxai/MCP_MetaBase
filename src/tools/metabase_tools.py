@@ -260,7 +260,30 @@ async def run_database_query(database_id: int, query: str) -> str:
         return "Error: No response received from Metabase API"
     
     if isinstance(response, dict) and "error" in response:
-        return f"Error executing query: {response.get('message', 'Unknown error')}"
+        # Extract more detailed error information if available
+        error_message = response.get('message', 'Unknown error')
+        
+        # Try to extract structured error info
+        if isinstance(error_message, dict) and 'data' in error_message:
+            data = error_message.get('data', {})
+            if 'errors' in data:
+                return f"Error executing query: {data['errors']}"
+        
+        # Handle different error formats from Metabase
+        if isinstance(error_message, str) and "does not exist" in error_message:
+            return f"Error executing query: {error_message}"
+            
+        # If it's a raw JSON string representation, try to parse it
+        if isinstance(error_message, str) and error_message.startswith('{'):
+            try:
+                import json
+                error_json = json.loads(error_message)
+                if 'data' in error_json and 'errors' in error_json['data']:
+                    return f"Error executing query: {error_json['data']['errors']}"
+            except:
+                pass
+        
+        return f"Error executing query: {error_message}"
     
     # Format the results
     result = f"## Query Results\n\n"
