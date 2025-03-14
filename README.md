@@ -104,10 +104,13 @@ The MCP server provides the following tools to AI assistants:
 
 1. **list_databases**: List all databases configured in Metabase
 2. **get_database_metadata**: Get detailed metadata for a specific database
-3. **visualize_database_relationships**: Generate a visual representation of database relationships
-4. **list_actions**: List all actions configured in Metabase
-5. **get_action_details**: Get detailed information about a specific action
-6. **execute_action**: Execute a Metabase action with parameters
+3. **db_overview**: Get a high-level overview of all tables in a database
+4. **table_detail**: Get detailed information about a specific table
+5. **visualize_database_relationships**: Generate a visual representation of database relationships
+6. **run_database_query**: Execute a SQL query against a database
+7. **list_actions**: List all actions configured in Metabase
+8. **get_action_details**: Get detailed information about a specific action
+9. **execute_action**: Execute a Metabase action with parameters
 
 ### Testing Tools via Web Interface
 
@@ -115,10 +118,13 @@ The web interface provides a testing area for each tool:
 
 1. **List Databases**: View all databases configured in Metabase
 2. **Get Database Metadata**: View detailed schema information for a database
-3. **Visualize Database Relationships**: Generate a visual representation of table relationships
-4. **List Actions**: View all actions configured in Metabase
-5. **Get Action Details**: View detailed information about a specific action
-6. **Execute Action**: Test executing an action with parameters
+3. **DB Overview**: View a concise list of all tables in a database
+4. **Table Detail**: View detailed information about a specific table
+5. **Visualize Database Relationships**: Generate a visual representation of table relationships
+6. **Run Query**: Execute SQL queries against databases
+7. **List Actions**: View all actions configured in Metabase
+8. **Get Action Details**: View detailed information about a specific action
+9. **Execute Action**: Test executing an action with parameters
 
 ## Security Considerations
 

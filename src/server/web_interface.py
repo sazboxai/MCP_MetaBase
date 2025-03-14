@@ -211,6 +211,47 @@ def create_app():
             print(f"Error in test_run_query: {str(e)}\n{error_traceback}")
             return jsonify({'success': False, 'error': str(e)})
     
+    @app.route('/test_db_overview', methods=['POST'])
+    async def test_db_overview():
+        """Test the db_overview tool"""
+        from src.tools.metabase_tools import db_overview
+        
+        database_id = request.form.get('database_id')
+        if not database_id or not database_id.isdigit():
+            return jsonify({'success': False, 'error': 'Valid database ID is required'})
+        
+        try:
+            result = await db_overview(int(database_id))
+            return jsonify({'success': True, 'result': result})
+        except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            print(f"Error in test_db_overview: {str(e)}\n{error_traceback}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    @app.route('/test_table_detail', methods=['POST'])
+    async def test_table_detail():
+        """Test the table_detail tool"""
+        from src.tools.metabase_tools import table_detail
+        
+        database_id = request.form.get('database_id')
+        table_id = request.form.get('table_id')
+        
+        if not database_id or not database_id.isdigit():
+            return jsonify({'success': False, 'error': 'Valid database ID is required'})
+        
+        if not table_id or not table_id.isdigit():
+            return jsonify({'success': False, 'error': 'Valid table ID is required'})
+        
+        try:
+            result = await table_detail(int(database_id), int(table_id))
+            return jsonify({'success': True, 'result': result})
+        except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            print(f"Error in test_table_detail: {str(e)}\n{error_traceback}")
+            return jsonify({'success': False, 'error': str(e)})
+    
     return app
 
 def run_web_interface():

@@ -146,8 +146,13 @@ class MetabaseAPI:
     
     @classmethod
     async def get_table_metadata(cls, table_id: int):
-        """Get detailed metadata for a specific table including foreign keys"""
+        """Get detailed metadata for a specific table"""
         return await cls.get_request(f"table/{table_id}/query_metadata")
+    
+    @classmethod
+    async def get_field_metadata(cls, field_id: int):
+        """Get detailed metadata for a specific field"""
+        return await cls.get_request(f"field/{field_id}")
     
     @classmethod
     async def get_database_schema(cls, database_id: int):

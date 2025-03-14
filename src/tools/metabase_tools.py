@@ -323,4 +323,148 @@ async def run_database_query(database_id: int, query: str) -> str:
         result += f"Error formatting results: {str(e)}\n"
         result += f"Raw response: {response}\n"
     
+    return result
+
+async def db_overview(database_id: int) -> str:
+    """
+    Get an overview of all tables in a database without detailed field information.
+    
+    Args:
+        database_id: The ID of the database to get the overview for
+        
+    Returns:
+        A formatted string with basic information about all tables in the database.
+    """
+    response = await MetabaseAPI.get_database_schema(database_id)
+    
+    if response is None or "error" in response:
+        return f"Error fetching database schema: {response.get('message', 'Unknown error')}"
+    
+    tables = response.get('tables', [])
+    if not tables:
+        return "No tables found in this database."
+    
+    result = f"## Database Overview: {response.get('name')}\n\n"
+    
+    # Add database details
+    result += f"**ID**: {response.get('id')}\n"
+    result += f"**Engine**: {response.get('engine')}\n"
+    result += f"**Is Sample**: {response.get('is_sample', False)}\n\n"
+    
+    # Add tables information in a tabular format
+    result += "### Tables\n\n"
+    
+    # Create markdown table header with Table ID
+    result += "| Table ID | Table Name | Schema | Description | # of Fields |\n"
+    result += "| -------- | ---------- | ------ | ----------- | ----------- |\n"
+    
+    # Add each table as a row
+    for table in tables:
+        table_id = table.get('id', 'Unknown')
+        name = table.get('name', 'Unknown')
+        schema = table.get('schema', 'N/A')
+        description = table.get('description', 'No description')
+        field_count = len(table.get('fields', []))
+        
+        # Add null check before using string methods
+        if description is None:
+            description = 'No description'
+        else:
+            # Clean up description for table display (remove newlines but keep full text)
+            description = description.replace('\n', ' ').strip()
+        
+        result += f"| {table_id} | {name} | {schema} | {description} | {field_count} |\n"
+    
+    return result
+
+async def table_detail(database_id: int, table_id: int) -> str:
+    """
+    Get detailed information about a specific table.
+    
+    Args:
+        database_id: The ID of the database containing the table
+        table_id: The ID of the table to get details for
+        
+    Returns:
+        A formatted string with detailed information about the table.
+    """
+    # Directly fetch metadata for the specific table
+    response = await MetabaseAPI.get_table_metadata(table_id)
+    
+    if response is None or "error" in response:
+        return f"Error fetching table metadata: {response.get('message', 'Unknown error')}"
+    
+    # Extract table information
+    table_name = response.get('name', 'Unknown')
+    result = f"## Table Details: {table_name}\n\n"
+    
+    # Add table details
+    result += f"**ID**: {response.get('id')}\n"
+    result += f"**Schema**: {response.get('schema', 'N/A')}\n"
+    description = response.get('description', 'No description')
+    if description is None:
+        description = 'No description'
+    result += f"**Description**: {description}\n\n"
+    
+    # Add fields section
+    fields = response.get('fields', [])
+    result += f"### Fields ({len(fields)})\n\n"
+    
+    # Create markdown table for fields
+    result += "| Field ID | Field Name | Type | Description | Special Type |\n"
+    result += "| -------- | ---------- | ---- | ----------- | ------------ |\n"
+    
+    # Track foreign keys for relationship section
+    foreign_keys = []
+    
+    for field in fields:
+        field_id = field.get('id', 'Unknown')
+        name = field.get('name', 'Unknown')
+        field_type = field.get('base_type', 'Unknown')
+        description = field.get('description', 'No description')
+        special_type = field.get('special_type', 'None')
+        
+        # Add null check before using string methods
+        if description is None:
+            description = 'No description'
+        else:
+            # Clean up description for table display (remove newlines but keep full text)
+            description = description.replace('\n', ' ').strip()
+        
+        result += f"| {field_id} | {name} | {field_type} | {description} | {special_type} |\n"
+        
+        # Check if this is a foreign key
+        fk_target_field_id = field.get('fk_target_field_id')
+        if fk_target_field_id:
+            foreign_keys.append({
+                'source_field': field.get('name'),
+                'source_field_id': field.get('id'),
+                'target_field_id': fk_target_field_id
+            })
+    
+    # Add relationships section if there are foreign keys
+    if foreign_keys:
+        result += "\n### Relationships\n\n"
+        
+        for fk in foreign_keys:
+            # We'll need to fetch target field information
+            target_field = await MetabaseAPI.get_field_metadata(fk['target_field_id'])
+            
+            if target_field and not "error" in target_field:
+                target_field_name = target_field.get('name', 'Unknown field')
+                target_table_id = target_field.get('table_id')
+                
+                # Get target table information
+                target_table = await MetabaseAPI.get_table_metadata(target_table_id)
+                target_table_name = target_table.get('name', 'Unknown table') if target_table else 'Unknown table'
+                
+                result += f"- **{fk['source_field']}** → **{target_table_name}.{target_field_name}** (Table ID: {target_table_id})\n"
+            else:
+                result += f"- **{fk['source_field']}** → **Unknown reference** (Target Field ID: {fk['target_field_id']})\n"
+    
+    # For "Referenced By" section, we would need to search through other tables
+    # For now, let's note that this would require additional API calls
+    result += "\n### Referenced By\n\n"
+    result += "*Note: To see all references to this table, use the database visualization tool.*\n"
+    
     return result 

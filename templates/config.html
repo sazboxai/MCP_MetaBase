@@ -4,6 +4,8 @@
     <title>Metabase MCP Configuration</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.1.0/github-markdown.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,6 +81,71 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 100%;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            color: #24292e;
+            font-weight: normal;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4 {
+            color: #24292e;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+        .markdown-body table {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+        }
+        .markdown-body table th {
+            font-weight: 600;
+            padding: 8px 13px;
+            border: 1px solid #ddd;
+            background-color: #f6f8fa;
+            color: #24292e;
+        }
+        .markdown-body table td {
+            padding: 8px 13px;
+            border: 1px solid #ddd;
+            color: #24292e;
+        }
+        .markdown-body table tr {
+            background-color: #fff;
+            border-top: 1px solid #c6cbd1;
+        }
+        .markdown-body table tr:nth-child(2n) {
+            background-color: #f6f8fa;
+        }
+        .markdown-body p,
+        .markdown-body ul,
+        .markdown-body ol,
+        .markdown-body blockquote {
+            color: #24292e;
+            margin-bottom: 16px;
+        }
+        .markdown-body pre,
+        .markdown-body code {
+            background-color: #f6f8fa;
+            border-radius: 3px;
+            padding: 0.2em 0.4em;
+            color: #24292e;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        }
+        .result-container {
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -136,6 +203,26 @@
         <button type="button" id="test-get-metadata">Test Get Metadata</button>
         <div id="get-metadata-result" class="result-area"></div>
         
+        <h3>DB Overview</h3>
+        <div class="form-group">
+            <label for="db_overview_database_id">Database ID:</label>
+            <input type="text" id="db_overview_database_id" placeholder="Enter database ID">
+        </div>
+        <button type="button" id="test-db-overview">Get Database Overview</button>
+        <div id="db-overview-result" class="result-area"></div>
+        
+        <h3>Table Detail</h3>
+        <div class="form-group">
+            <label for="table_detail_database_id">Database ID:</label>
+            <input type="text" id="table_detail_database_id" placeholder="Enter database ID">
+        </div>
+        <div class="form-group">
+            <label for="table_detail_table_id">Table ID:</label>
+            <input type="text" id="table_detail_table_id" placeholder="Enter table ID (from DB Overview)">
+        </div>
+        <button type="button" id="test-table-detail">Get Table Detail</button>
+        <div id="table-detail-result" class="result-area"></div>
+        
         <h3>Visualize Database Relationships</h3>
         <div class="form-group">
             <label for="relationship_database_id">Database ID:</label>
@@ -183,6 +270,42 @@
     </div>
     
     <script>
+        // Configure marked.js options
+        marked.setOptions({
+            gfm: true,
+            breaks: true,
+            tables: true,
+            sanitize: false
+        });
+
+        // Function to format response data with proper Markdown rendering
+        function formatResponse(container, data) {
+            if (data.success) {
+                // Check if response has result or message property
+                const content = data.result || data.message || '';
+                
+                // Only try to parse as markdown if it's not empty
+                if (content) {
+                    container.innerHTML = '<div class="markdown-body">' + marked.parse(content) + '</div>';
+                } else {
+                    container.innerHTML = '<div class="markdown-body">Operation completed successfully.</div>';
+                }
+                
+                // Add success class if not already present
+                if (!container.className.includes('success')) {
+                    container.className += ' success';
+                }
+            } else {
+                const errorMsg = data.error || data.message || 'Unknown error';
+                container.innerHTML = '<div class="error">' + errorMsg + '</div>';
+                
+                // Add error class if not already present
+                if (!container.className.includes('error')) {
+                    container.className += ' error';
+                }
+            }
+        }
+
         // Test connection
         document.getElementById('test-connection').addEventListener('click', function() {
             const url = document.getElementById('metabase_url').value;
@@ -199,12 +322,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                } else {
-                    resultArea.className = 'result-area error';
-                }
-                resultArea.innerHTML = data.message;
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -222,13 +340,7 @@
             fetch('/test_list_databases')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.className = 'result-area error';
-                    resultArea.innerHTML = `Error: ${data.error}`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -258,13 +370,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.className = 'result-area error';
-                    resultArea.innerHTML = `Error: ${data.error}`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -282,13 +388,7 @@
             fetch('/test_list_actions')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.className = 'result-area error';
-                    resultArea.innerHTML = `Error: ${data.error}`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -318,13 +418,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.className = 'result-area error';
-                    resultArea.innerHTML = `Error: ${data.error}`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -437,13 +531,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.className = 'result-area success';
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.className = 'result-area error';
-                    resultArea.innerHTML = `Error: ${data.error}`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.className = 'result-area error';
@@ -472,11 +560,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.innerHTML = `<div class="error">${data.error}</div>`;
-                }
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;
@@ -506,11 +590,65 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    resultArea.innerHTML = data.result;
-                } else {
-                    resultArea.innerHTML = `<div class="error">${data.error}</div>`;
-                }
+                formatResponse(resultArea, data);
+            })
+            .catch(error => {
+                resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+        });
+
+        // Test DB Overview
+        document.getElementById('test-db-overview').addEventListener('click', function() {
+            const databaseId = document.getElementById('db_overview_database_id').value;
+            if (!databaseId) {
+                alert('Please enter a database ID');
+                return;
+            }
+            
+            const resultArea = document.getElementById('db-overview-result');
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Loading database overview...';
+            
+            fetch('/test_db_overview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `database_id=${databaseId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                formatResponse(resultArea, data);
+            })
+            .catch(error => {
+                resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+        });
+
+        // Test Table Detail
+        document.getElementById('test-table-detail').addEventListener('click', function() {
+            const databaseId = document.getElementById('table_detail_database_id').value;
+            const tableId = document.getElementById('table_detail_table_id').value;
+            
+            if (!databaseId || !tableId) {
+                alert('Please enter both database ID and table ID');
+                return;
+            }
+            
+            const resultArea = document.getElementById('table-detail-result');
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = 'Loading table details...';
+            
+            fetch('/test_table_detail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `database_id=${encodeURIComponent(databaseId)}&table_id=${encodeURIComponent(tableId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                formatResponse(resultArea, data);
             })
             .catch(error => {
                 resultArea.innerHTML = `<div class="error">Error: ${error.message}</div>`;

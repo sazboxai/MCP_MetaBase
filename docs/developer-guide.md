@@ -53,6 +53,20 @@ The Metabase MCP Server consists of several key components:
 - `src/tools/metabase_action_tools.py`: Action-related tool implementations
 - `templates/config.html`: HTML template for the web interface
 
+### Available Tools
+
+The MCP server includes the following tools:
+
+1. **list_databases**: Lists all databases configured in Metabase
+2. **get_database_metadata**: Gets detailed metadata for a specific database
+3. **db_overview**: Gets a high-level overview of all tables in a database
+4. **table_detail**: Gets detailed information about a specific table
+5. **visualize_database_relationships**: Generates a visual representation of database relationships
+6. **run_database_query**: Executes SQL queries against databases
+7. **list_actions**: Lists all actions configured in Metabase
+8. **get_action_details**: Gets detailed information about a specific action
+9. **execute_action**: Executes a Metabase action with parameters
+
 ## Adding New Features
 
 ### Adding a New Tool
@@ -178,6 +192,92 @@ async def test_my_new_tool():
     
     try:
         result = await my_new_tool(param1, int(param2))
+        return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+```
+
+### Example Implementation: DB Overview and Table Detail
+
+As an example of how to implement new tools, consider the recently added `db_overview` and `table_detail` tools:
+
+1. **Tool Implementation**:
+
+```python
+# In src/tools/metabase_tools.py
+async def db_overview(database_id: int) -> str:
+    """
+    Get an overview of all tables in a database without detailed field information.
+    
+    Args:
+        database_id: The ID of the database to get the overview for
+        
+    Returns:
+        A formatted string with basic information about all tables in the database.
+    """
+    response = await MetabaseAPI.get_database_schema(database_id)
+    
+    # Process response and format output...
+    result = f"## Database Overview: {response.get('name')}\n\n"
+    # ... additional formatting logic
+    
+    return result
+
+async def table_detail(database_id: int, table_name: str) -> str:
+    """
+    Get detailed information about a specific table.
+    
+    Args:
+        database_id: The ID of the database containing the table
+        table_name: The name of the table to get details for
+        
+    Returns:
+        A formatted string with detailed information about the table.
+    """
+    response = await MetabaseAPI.get_database_schema(database_id)
+    
+    # Process response and format output...
+    result = f"## Table Details: {table_name}\n\n"
+    # ... additional formatting logic
+    
+    return result
+```
+
+2. **API Endpoints**:
+
+```python
+# In src/server/web_interface.py
+@app.route('/test_db_overview', methods=['POST'])
+async def test_db_overview():
+    """Test the db_overview tool"""
+    from src.tools.metabase_tools import db_overview
+    
+    database_id = request.form.get('database_id')
+    if not database_id or not database_id.isdigit():
+        return jsonify({'success': False, 'error': 'Valid database ID is required'})
+    
+    try:
+        result = await db_overview(int(database_id))
+        return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/test_table_detail', methods=['POST'])
+async def test_table_detail():
+    """Test the table_detail tool"""
+    from src.tools.metabase_tools import table_detail
+    
+    database_id = request.form.get('database_id')
+    table_name = request.form.get('table_name')
+    
+    if not database_id or not database_id.isdigit():
+        return jsonify({'success': False, 'error': 'Valid database ID is required'})
+    
+    if not table_name or not table_name.strip():
+        return jsonify({'success': False, 'error': 'Table name is required'})
+    
+    try:
+        result = await table_detail(int(database_id), table_name)
         return jsonify({'success': True, 'result': result})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
