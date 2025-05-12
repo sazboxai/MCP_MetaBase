@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Allow running different commands based on first argument
-if [ "$1" = "config" ]; then
-    echo "Starting configuration interface..."
-    exec python -m src.server.web_interface
-elif [ "$1" = "mcp" ]; then
-    echo "Starting MCP server..."
-    exec python -m src.server.mcp_server
-else
-    # Default to MCP server if no command is provided
-    echo "Starting MCP server (default)..."
-    exec python -m src.server.mcp_server
-fi 
+# Default behavior: Start both MCP server and Web Interface
+echo "Starting MCP server in background..."
+python -m src.server.mcp_server &
+MCP_PID=$! # Get the Process ID of the backgrounded MCP server
+
+echo "Starting Web Interface in foreground..."
+# The FLASK_PORT environment variable should be set (e.g., in your .env file or Dockerfile)
+# to the port exposed in the Dockerfile (5000).
+# The Flask app in web_interface.py must be configured to bind to 0.0.0.0.
+exec python -m src.server.web_interface
+
+# Optional: A more robust script might wait for the MCP_PID to exit
+# and handle cleanup, but for now, this keeps the web interface as the main process. 

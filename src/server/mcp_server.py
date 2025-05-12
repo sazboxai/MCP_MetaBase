@@ -1,109 +1,49 @@
 from mcp.server.fastmcp import FastMCP
 from src.config.settings import Config
-from src.tools.metabase_tools import list_databases, get_database_metadata, visualize_database_relationships, run_database_query
+from src.tools.metabase_tools import list_databases, get_database_metadata, db_overview, table_detail, visualize_database_relationships, run_database_query
 from src.tools.metabase_action_tools import list_actions, get_action_details, execute_action
 
 def create_mcp_server():
-    """Create and configure the MCP server"""
+    """Create and configure an MCP server instance."""
     mcp = FastMCP(Config.MCP_NAME)
     
-    # Register database tools with improved descriptions and schemas
+    # Register database tools
     mcp.tool(
-        description="List all databases configured in Metabase with their IDs, names, and engines",
-        examples=["List all the databases in Metabase", "Show me the available databases"]
+        description="List all databases configured in Metabase"
     )(list_databases)
     
     mcp.tool(
-        description="Get detailed metadata for a specific database including tables and fields",
-        examples=["Get metadata for database 1", "Show me the schema for database 2"],
-        input_schema={
-            "type": "object",
-            "properties": {
-                "database_id": {
-                    "type": "integer",
-                    "description": "The ID of the database to fetch metadata for"
-                }
-            },
-            "required": ["database_id"]
-        }
+        description="Get detailed metadata for a specific database"
     )(get_database_metadata)
     
-    # Register action tools with improved descriptions and schemas
     mcp.tool(
-        description="List all actions configured in Metabase with their IDs, names, and types",
-        examples=["List all Metabase actions", "Show me the available actions"]
-    )(list_actions)
-    
+        description="Get a high-level overview of all tables in a database"
+    )(db_overview)
+
     mcp.tool(
-        description="Get detailed information about a specific Metabase action",
-        examples=["Get details for action 1", "Show me information about action 2"],
-        input_schema={
-            "type": "object",
-            "properties": {
-                "action_id": {
-                    "type": "integer",
-                    "description": "The ID of the action to fetch details for"
-                }
-            },
-            "required": ["action_id"]
-        }
-    )(get_action_details)
-    
+        description="Get detailed information about a specific table"
+    )(table_detail)
+
     mcp.tool(
-        description="Execute a Metabase action with the provided parameters",
-        examples=["Execute action 1 with parameter x=10", "Run action 2 with customer_id=123"],
-        input_schema={
-            "type": "object",
-            "properties": {
-                "action_id": {
-                    "type": "integer",
-                    "description": "The ID of the action to execute"
-                },
-                "parameters": {
-                    "type": "object",
-                    "description": "Parameter values to use when executing the action"
-                }
-            },
-            "required": ["action_id"]
-        }
-    )(execute_action)
-    
-    mcp.tool(
-        description="Visualize relationships between tables in a database",
-        examples=["Show relationships in database 1", "Visualize database schema for database 2"],
-        input_schema={
-            "type": "object",
-            "properties": {
-                "database_id": {
-                    "type": "integer",
-                    "description": "The ID of the database to visualize relationships for"
-                }
-            },
-            "required": ["database_id"]
-        }
+        description="Generate a visual representation of database relationships"
     )(visualize_database_relationships)
-    
+
     mcp.tool(
-        description="Run a read-only SQL query against a database and return the first 5 rows",
-        examples=[
-            "Run query 'SELECT * FROM users' on database 1", 
-            "Execute 'SELECT id, name FROM products WHERE price > 100' on database 2"
-        ],
-        input_schema={
-            "type": "object",
-            "properties": {
-                "database_id": {
-                    "type": "integer",
-                    "description": "The ID of the database to query"
-                },
-                "query": {
-                    "type": "string",
-                    "description": "The SQL query to execute (will be limited to 5 rows)"
-                }
-            },
-            "required": ["database_id", "query"]
-        }
+        description="Run a read-only SQL query against a database"
     )(run_database_query)
+
+    # Register action tools
+    mcp.tool(
+        description="List all actions configured in Metabase"
+    )(list_actions)
+
+    mcp.tool(
+        description="Get detailed information about a specific action"
+    )(get_action_details)
+
+    mcp.tool(
+        description="Execute a Metabase action with parameters"
+    )(execute_action)
     
     return mcp
 

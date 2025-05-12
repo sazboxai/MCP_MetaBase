@@ -254,10 +254,9 @@ def create_app():
     
     return app
 
-def run_web_interface():
-    """Run the web interface"""
+if __name__ == '__main__':
     app = create_app()
-    app.run(host=Config.FLASK_HOST, port=Config.FLASK_PORT, debug=Config.FLASK_DEBUG)
-
-if __name__ == "__main__":
-    run_web_interface() 
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    # Use a Config attribute for debug for consistency, e.g., Config.FLASK_DEBUG
+    # Ensure FLASK_DEBUG is set appropriately in your .env or config settings
+    app.run(host='0.0.0.0', port=port, debug=getattr(Config, 'FLASK_DEBUG', False)) 
