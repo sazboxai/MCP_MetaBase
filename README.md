@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/sazboxai-mcp-metabase-badge.png)](https://mseep.ai/app/sazboxai-mcp-metabase)
+
 # Metabase MCP Server
 
 A Model Control Protocol (MCP) server that enables AI assistants to interact with Metabase databases and actions.
